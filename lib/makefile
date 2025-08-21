@@ -24,7 +24,7 @@ EXTFLAGS  =
 
 SRCDIR    = ../src
 OBJDIR    = obj
-VPROC_TOP = ../../VProc
+VPROC_TOP = ../../vproc
 
 ARCHFLAG  = -m32
 
