@@ -1,0 +1,59 @@
+###################################################################
+# Makefile for Virtual PCIe Host C code in Synopsys VCS
+#
+# Copyright (c) 2005-2024 Simon Southwell.
+#
+# This file is part of pcieVHost.
+#
+# pcieVHost is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# pcieVHost is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pcieVHost. If not, see <http://www.gnu.org/licenses/>.
+#
+###################################################################
+
+SRCDIR    = ../src
+OBJDIR    = obj
+# 참고: 이 경로는 실제 프로젝트 구조에 맞게 수정해야 할 수 있습니다.
+VPROC_TOP = ../../vproc
+
+# VCS는 일반적으로 64비트 환경에서 실행됩니다.
+ARCHFLAG  = -m64
+
+# DPI 연동을 가정하고 veriuser.c는 제외합니다.
+C_FILES   = codec.c mem.c pcie.c pcie_utils.c pcicrc32.c ltssm.c displink.c
+
+# VCS_HOME 환경 변수가 설정되어 있어야 합니다.
+# VCS의 DPI 관련 헤더 파일을 포함하기 위해 -I$(VCS_HOME)/include 를 추가합니다.
+CFLAGS    = -c -fPIC $(ARCHFLAG) -I$(VCS_HOME)/include -I$(VPROC_TOP)/code -DVPROC_SV -DLTSSM_ABBREVIATED
+
+CC        = gcc
+
+LIB       = libpcievhost.a
+
+OBJS      = $(addprefix $(OBJDIR)/, $(C_FILES:%.c=%.o))
+
+all: $(LIB)
+
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+	@$(CC) $(CFLAGS) $< -o $@
+
+$(LIB) : $(OBJS)
+	@ar cr $(LIB) $(OBJS)
+
+$(OBJS): | $(OBJDIR)
+
+$(OBJDIR):
+	@mkdir $(OBJDIR)
+
+
+clean:
+	@rm -rf $(LIB) $(OBJS)

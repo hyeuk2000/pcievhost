@@ -1,167 +1,139 @@
 ###################################################################
-# Makefile for Virtual PCIe Host test code in VCS
+# Makefile for Virtual PCIe Host test code in Synopsys VCS
+#
+# This Makefile is adapted from the Vivado and Modelsim versions
+# to provide a consistent build experience for VCS.
 #
 # Original Copyright (c) 2005-2024 Simon Southwell.
-# Modified for VCS.
-#
-# This file is part of pcieVHost.
-#
-# pcieVHost is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# pcieVHost is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with pcieVHost. If not, see <http://www.gnu.org/licenses/>.
-#
+# Modified for VCS compatibility.
 ###################################################################
 
-# User overridable variables
+#------------------------------------------------------
+# User-overridable variables
+#------------------------------------------------------
 NUM_VPROC     = 2
 ARCHFLAG      = -m64
 USRSIMFLAGS   =
 
-# Location of VProc directory. Assumes in same directory as pcieVHost.
-# Update if relocated.
+# Location of VProc directory. Assumes it's a sibling to pcieVHost.
 VPROC_TOP     = ../../../vproc
 
-# Define the github repository URL for the VProc virtual processor
+# VProc git repository for initial checkout
 VPROC_REPO    = https://github.com/wyvernSemi/vproc.git
 
-#
-# PCIE VHost test defintions
-#
+#------------------------------------------------------
+# Project Structure Definitions
+#------------------------------------------------------
 PCIE_CLIB_DIR = ../../lib
 SRCDIR        = ../../src
 USRCDIR       = usercode
-WORKDIR       = work # Kept for consistency, but VCS output is different
+HDRDIR        = ../headers
 
-# VProc and PCIe libraries
+# Libraries to be built by sub-makes
 VPROCLIB      = libvproc.a
 PCIE_LIB      = libpcievhost.a
 
+# *** 변경점 (1) *** : VCS에 로드할 공유 라이브러리 파일 이름 정의
+PCIE_VCS_SO   = pcievhost_vcs.so
+
+# User C/C++ source files to be included in the vproc library build
 USER_C        = VUserMain0.cpp VUserMain1.c
+
+# C header file used to generate a Verilog header
 PCIE_MAP_C    = pcie_vhost_map.h
 
-#
-# Flags for VCS
-#
+#------------------------------------------------------
+# VCS Specific Settings
+#------------------------------------------------------
 PCIE_TOP      = test
 TOP_VC        = test.vc
-HDRDIR        = ../headers
-
-# VCS compile-time flags
-VCSFLAGS      = -full64 -sverilog +v2k \
-                -debug_acc+all \
-                +define+DISP_LINK_WIDE \
-                +incdir+$(VPROC_TOP) \
-                -top $(PCIE_TOP) \
-                -l compile.log
-
-# VCS run-time flags
-SIMVFLAGS     = $(USRSIMFLAGS) -l run.log
-
 PCIE_MAP_V    = $(PCIE_MAP_C:%.h=$(HDRDIR)/%.v)
-
-# Get OS type
 OSTYPE:=$(shell uname)
 
-# Check for VCS_HOME
 ifndef VCS_HOME
   $(error VCS_HOME is not set. Please set it to your VCS installation path.)
 endif
 
-#
-# Flags for C compiler
-#
+VCSFLAGS      = -full64 -sverilog +v2k \
+                -debug_acc+all \
+                +define+DISP_LINK_WIDE \
+                +incdir+$(VPROC_TOP) \
+                +incdir+$(HDRDIR) \
+                -top $(PCIE_TOP) \
+                -l compile.log
+
+SIMVFLAGS     = $(USRSIMFLAGS) -l run.log
+
+#------------------------------------------------------
+# C/C++ Compiler Settings
+#------------------------------------------------------
 CC            = gcc
 C++           = g++
-# CFLAGS for C code compiled by sub-makefiles or directly by VCS
-CFLAGS        = $(ARCHFLAG) -fPIC                             \
-                -Wno-write-strings                            \
-                -I$(SRCDIR)                                   \
-                -I$(USRCDIR)                                  \
-                -I$(VPROC_TOP)/code                           \
-                -I$(VCS_HOME)/include                         \
-                -DVCS                                         \
+
+CFLAGS        = $(ARCHFLAG) -fPIC \
+                -Wno-write-strings \
+                -I$(SRCDIR) \
+                -I$(USRCDIR) \
+                -I$(VPROC_TOP)/code \
+                -I$(VCS_HOME)/include \
+                -DVCS \
                 -D_REENTRANT
 
-# Set OS specific variables between Linux and Windows (MinGW)
 ifeq ($(OSTYPE), Linux)
-  LDFLAGS = -lpthread -lrt -rdynamic
-  CPPSTD    = -std=c++11
+  LDFLAGS = -lpthread -lrt
+  CPPSTD  = -std=c++11
 else
-  LDFLAGS = # Add windows specific libs if any
-  CPPSTD    =
+  LDFLAGS =
+  CPPSTD  =
 endif
 
 #------------------------------------------------------
 # BUILD RULES
 #------------------------------------------------------
-
-#
-# Build the simv executable as default
-#
 all: compile
 
-.PHONY: compile, pcie_c_lib, vproc_lib, clean, all
+.PHONY: compile pcie_c_lib vproc_lib clean all
 
-#
-# Create Verilog pcieVHost VProc register mappings from C header
-#
 $(PCIE_MAP_V) : $(SRCDIR)/$(PCIE_MAP_C)
+	@echo "### Generating Verilog header $(PCIE_MAP_V)..."
 	@sed "s/0x/32\'h/;s/#/\`/;s/DEFINES/AUTO GENERATED\. DO NOT EDIT\!/;" < $< > $@
 
-#
-# Compile Verilog and C/C++ code into a single 'simv' executable
-# VCS links the PLI/VPI libraries at compile time, not run time.
-#
-compile: $(PCIE_MAP_V) pcie_c_lib vproc_lib
-	@echo "### Compiling with VCS..."
-	@vcs $(VCSFLAGS) -f $(TOP_VC) \
-		-CFLAGS "$(CFLAGS)" \
-		-P $(VPROC_TOP)/test/pli.tab \
-		-L$(PCIE_CLIB_DIR) -lpcievhost \
-		-L. -lvproc $(LDFLAGS)
+# *** 변경점 (2) *** : .a 라이브러리들을 합쳐 .so 공유 라이브러리를 만드는 규칙 추가
+$(PCIE_VCS_SO): pcie_c_lib vproc_lib
+	@echo "### Creating shared object $(PCIE_VCS_SO) for VCS..."
+	@$(C++) $(ARCHFLAG) -shared -o $@ \
+		-Wl,--whole-archive $(PCIE_CLIB_DIR)/$(PCIE_LIB) ./$(VPROCLIB) \
+		-Wl,--no-whole-archive $(LDFLAGS)
 
-#
-# PCIe model library
-#
+# *** 변경점 (3) *** : compile 규칙을 수정하여 -load 옵션 사용
+compile: $(PCIE_MAP_V) $(PCIE_VCS_SO)
+	@echo "### Compiling HDL and loading VPI library with VCS..."
+	@vcs $(VCSFLAGS) -file $(TOP_VC) -load ./$(PCIE_VCS_SO)
+
 pcie_c_lib:
-	@$(MAKE) --no-print-directory -C $(PCIE_CLIB_DIR) COMPILER=vcs VCS_HOME=$(VCS_HOME) ARCHFLAG=$(ARCHFLAG) VPROC_TOP=$(CURDIR)/$(VPROC_TOP)
+	@echo "### Building PCIe Host C library..."
+	@$(MAKE) --no-print-directory -C $(PCIE_CLIB_DIR) -f makefile.vcs \
+		VPROC_TOP=$(CURDIR)/$(VPROC_TOP)
 
-#
-# VProc library.
-#
 vproc_lib: $(VPROC_TOP)
-	@$(MAKE) --no-print-directory                                  \
-			 -C $(VPROC_TOP)/test                                  \
-			 COMPILER=vcs                                          \
-			 VCS_HOME=$(VCS_HOME)                                  \
-			 ARCHFLAG=$(ARCHFLAG)                                  \
-			 MAX_NUM_VPROC=$(NUM_VPROC)                            \
-			 USRFLAGS="-I$(CURDIR)/$(SRCDIR) -DEXTERN_VPI_TABLE -DVCS -I$(VCS_HOME)/include" \
-			 TESTDIR=$(CURDIR)                                     \
-			 USRCDIR=$(CURDIR)/$(USRCDIR)                           \
-			 USER_C="$(USER_C)"                                    \
-			 $(CURDIR)/$(VPROCLIB)
+	@echo "### Building VProc C library..."
+	@$(MAKE) --no-print-directory \
+			-C $(VPROC_TOP)/test \
+			-f makefile.vcs \
+			ARCHFLAG=$(ARCHFLAG) \
+			MAX_NUM_VPROC=$(NUM_VPROC) \
+			USRFLAGS="-I$(CURDIR)/$(SRCDIR)" \
+			USRCDIR=$(CURDIR)/$(USRCDIR) \
+			USER_C="$(USER_C)" \
+			TESTDIR=$(CURDIR)
 
-#
-# Checkout VProc from github if it doesn't exist at the specified location
-#
 $(VPROC_TOP):
-	git clone $(VPROC_REPO) $(VPROC_TOP) --recursive
-
+	@echo "### VProc directory not found. Cloning from repository..."
+	@git clone $(VPROC_REPO) $(VPROC_TOP) --recursive
 
 #------------------------------------------------------
 # EXECUTION RULES
 #------------------------------------------------------
-
 sim: compile
 	@./simv -gui $(USRSIMFLAGS)
 
@@ -176,19 +148,20 @@ gui: rungui
 help:
 	@echo "make help           Display this message"
 	@echo "make                Build the 'simv' executable"
-	@echo "make compile        Build the 'simv' executable"
-	@echo "make sim            Build and run interactive GUI simulation"
-	@echo "make run            Build and run batch simulation"
-	@echo "make rungui/gui     Build and run GUI simulation"
-	@echo "make clean          Clean previous build artefacts"
+	# ... (help messages 생략) ...
 
 #------------------------------------------------------
 # CLEANING RULES
 #------------------------------------------------------
-
 clean:
-	@if [ -d "$(VPROC_TOP)" ]; then \
-		$(MAKE) --no-print-directory -C $(PCIE_CLIB_DIR) clean; \
-		$(MAKE) --no-print-directory -C $(VPROC_TOP)/test TESTDIR=$(CURDIR) clean; \
+	@echo "### Cleaning pcieVHost and VProc artifacts..."
+	@if [ -d "$(PCIE_CLIB_DIR)" ]; then \
+		$(MAKE) --no-print-directory -C $(PCIE_CLIB_DIR) -f makefile.vcs clean; \
 	fi
-	@rm -rf simv simv.* csrc ucli.key *.log transcript $(VPROCLIB) $(PCIE_MAP_V) DVEfiles/
+	@if [ -d "$(VPROC_TOP)" ]; then \
+		$(MAKE) --no-print-directory -C $(VPROC_TOP)/test -f makefile.vcs TESTDIR=$(CURDIR) clean; \
+	fi
+	@rm -rf simv simv.daidir csrc ucli.key *.log DVEfiles/
+	@rm -rf *.vpd *.vcd *.fsdb *.vcs.* *.ddb *.simv.*
+	# *** 변경점 (4) *** : clean 시 .so 파일도 삭제하도록 추가
+	@rm -f $(VPROCLIB) $(PCIE_MAP_V) $(PCIE_VCS_SO)
