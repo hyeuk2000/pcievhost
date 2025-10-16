@@ -33,11 +33,10 @@ HDRDIR        = ../headers
 VPROCLIB      = libvproc.a
 PCIE_LIB      = libpcievhost.a
 
-# *** 변경점 (1) *** : VCS에 로드할 공유 라이브러리 파일 이름 정의
 PCIE_VCS_SO   = pcievhost_vcs.so
 
 # User C/C++ source files to be included in the vproc library build
-USER_C        = VUserMain0.cpp VUserMain1.c
+USER_C        = VUserMain.cpp VUserMain.c
 
 # C header file used to generate a Verilog header
 PCIE_MAP_C    = pcie_vhost_map.h
@@ -98,14 +97,12 @@ $(PCIE_MAP_V) : $(SRCDIR)/$(PCIE_MAP_C)
 	@echo "### Generating Verilog header $(PCIE_MAP_V)..."
 	@sed "s/0x/32\'h/;s/#/\`/;s/DEFINES/AUTO GENERATED\. DO NOT EDIT\!/;" < $< > $@
 
-# *** 변경점 (2) *** : .a 라이브러리들을 합쳐 .so 공유 라이브러리를 만드는 규칙 추가
 $(PCIE_VCS_SO): pcie_c_lib vproc_lib
 	@echo "### Creating shared object $(PCIE_VCS_SO) for VCS..."
 	@$(C++) $(ARCHFLAG) -shared -o $@ \
 		-Wl,--whole-archive $(PCIE_CLIB_DIR)/$(PCIE_LIB) ./$(VPROCLIB) \
 		-Wl,--no-whole-archive $(LDFLAGS)
 
-# *** 변경점 (3) *** : compile 규칙을 수정하여 -load 옵션 사용
 compile: $(PCIE_MAP_V) $(PCIE_VCS_SO)
 	@echo "### Compiling HDL and loading VPI library with VCS..."
 	@vcs $(VCSFLAGS) -file $(TOP_VC) -load ./$(PCIE_VCS_SO)
@@ -163,5 +160,4 @@ clean:
 	fi
 	@rm -rf simv simv.daidir csrc ucli.key *.log DVEfiles/
 	@rm -rf *.vpd *.vcd *.fsdb *.vcs.* *.ddb *.simv.*
-	# *** 변경점 (4) *** : clean 시 .so 파일도 삭제하도록 추가
 	@rm -f $(VPROCLIB) $(PCIE_MAP_V) $(PCIE_VCS_SO)

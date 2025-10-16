@@ -261,13 +261,10 @@ wire [9:0] IntLinkUp15    = LinkUp15;
                                             );
 
  // Endpoint
- PcieVhost #(NUMLANES, `VPCIE_EP_NODE_NUM, 1)
-                                      ep   (.Clk              (Clk),
-                                            .notReset         (notReset),
-`ifdef VERILATOR
-                                            .ElecIdleOut      (ElecIdleUp),
-                                            .ElecIdleIn       (ElecIdleDown),
-`endif
+ 
+ PCIE_TOP_WRAPPER #(NUMLANES)
+                                      ep   (.sclk             (Clk),
+                                            .reset_n          (notReset),
                                             .LinkIn0          (IntLinkDown0),
                                             .LinkIn1          (IntLinkDown1),
                                             .LinkIn2          (IntLinkDown2),

@@ -31,14 +31,14 @@
 // The following can be overridden on the compile command line.
 //-------------------------------------------------------------
 
-// Clock period in ps (500MHz)
+// Clock period in ps (4GHz)
 `ifndef CLK_PERIOD
-`define CLK_PERIOD               2000
+`define CLK_PERIOD               250
 `endif
 
 // Simulation timeout (500ms)
 `ifndef TIMEOUT_COUNT
-`define TIMEOUT_COUNT            250000000
+`define TIMEOUT_COUNT            200000000
 `endif
 
 // Number of lanes (max is 16---other valid values are 8, 4, 2 and 1)

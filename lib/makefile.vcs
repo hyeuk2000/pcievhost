@@ -22,14 +22,13 @@
 
 SRCDIR    = ../src
 OBJDIR    = obj
-# 참고: 이 경로는 실제 프로젝트 구조에 맞게 수정해야 할 수 있습니다.
 VPROC_TOP = ../../vproc
 
 # VCS는 일반적으로 64비트 환경에서 실행됩니다.
 ARCHFLAG  = -m64
 
 # DPI 연동을 가정하고 veriuser.c는 제외합니다.
-C_FILES   = codec.c mem.c pcie.c pcie_utils.c pcicrc32.c ltssm.c displink.c
+C_FILES   = mem.c pcie.c pcie_utils.c pcicrc32.c displink.c ltssm.c codec.c
 
 # VCS_HOME 환경 변수가 설정되어 있어야 합니다.
 # VCS의 DPI 관련 헤더 파일을 포함하기 위해 -I$(VCS_HOME)/include 를 추가합니다.
