@@ -15,7 +15,7 @@ test_defs.v
 -f ../pcieVHost/pcieVHost.vc
 
 // PCIe Controller top level
--f ../../../design/filelist.vc
+-f ../../../sim/filelist.vc
 
 // VProc
 ../../../vproc/extradefs.v
