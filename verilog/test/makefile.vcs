@@ -11,7 +11,7 @@
 #------------------------------------------------------
 # User-overridable variables
 #------------------------------------------------------
-NUM_VPROC     = 2
+NUM_VPROC     = 1
 ARCHFLAG      = -m64
 USRSIMFLAGS   =
 
@@ -36,7 +36,7 @@ PCIE_LIB      = libpcievhost.a
 PCIE_VCS_SO   = pcievhost_vcs.so
 
 # User C/C++ source files to be included in the vproc library build
-USER_C        = VUserMain.cpp VUserMain.c
+USER_C        = VUserMain.cpp
 
 # C header file used to generate a Verilog header
 PCIE_MAP_C    = pcie_vhost_map.h
