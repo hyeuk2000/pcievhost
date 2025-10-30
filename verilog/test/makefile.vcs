@@ -106,7 +106,7 @@ $(PCIE_VCS_SO): pcie_c_lib vproc_lib
 
 compile: $(PCIE_MAP_V) $(PCIE_VCS_SO)
 	@echo "### Compiling HDL and loading VPI library with VCS..."
-	@vcs $(VCSFLAGS) -file $(TOP_VC) -load $(PCIE_VCS_SO)
+	@vcs $(VCSFLAGS) -file $(TOP_VC) -load ./$(PCIE_VCS_SO)
 
 pcie_c_lib:
 	@echo "### Building PCIe Host C library..."
