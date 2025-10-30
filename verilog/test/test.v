@@ -33,7 +33,7 @@ module test
 #(parameter VCD_DUMP       = 0,
   parameter DEBUG_STOP     = 0,
   parameter PIPE           = 0,
-  parameter NUMLANES       = 16
+  parameter NUMLANES       = 4
 );
 
 reg     Clk;
