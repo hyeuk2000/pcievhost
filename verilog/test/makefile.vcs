@@ -34,7 +34,7 @@ VPROCLIB      = libvproc.a
 PCIE_LIB      = libpcievhost.a
 
 PCIE_VCS_SO   = pcievhost_vcs.so
-
+PCIE_VCS_SO_ABS = $(abspath $(PCIE_VCS_SO))
 # User C/C++ source files to be included in the vproc library build
 USER_C        = VUserMain.cpp
 
@@ -54,7 +54,7 @@ ifndef VCS_HOME
 endif
 
 VCSFLAGS      = -full64 -sverilog +v2k \
-                -debug_acc+all \
+                -debug_acc+all -kdb \
                 +define+DISP_LINK_WIDE \
                 +incdir+$(VPROC_TOP) \
                 +incdir+$(HDRDIR) \
@@ -105,7 +105,7 @@ $(PCIE_VCS_SO): pcie_c_lib vproc_lib
 
 compile: $(PCIE_MAP_V) $(PCIE_VCS_SO)
 	@echo "### Compiling HDL and loading VPI library with VCS..."
-	@vcs $(VCSFLAGS) -file $(TOP_VC) -load ./$(PCIE_VCS_SO)
+	@vcs $(VCSFLAGS) -file $(TOP_VC) -load $(PCIE_VCS_ABS_SO)
 
 pcie_c_lib:
 	@echo "### Building PCIe Host C library..."
