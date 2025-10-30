@@ -54,7 +54,7 @@ ifndef VCS_HOME
 endif
 
 VCSFLAGS      = -full64 -sverilog +v2k \
-                -debug_acc+all -kdb \
+                -debug_acc+all -kdb\
                 +define+DISP_LINK_WIDE \
                 +incdir+$(VPROC_TOP) \
                 +incdir+$(HDRDIR) \
