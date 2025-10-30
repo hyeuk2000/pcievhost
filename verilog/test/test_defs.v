@@ -31,9 +31,9 @@
 // The following can be overridden on the compile command line.
 //-------------------------------------------------------------
 
-// Clock period in ps (4GHz)
+// Clock period in ps (2GHz)
 `ifndef CLK_PERIOD
-`define CLK_PERIOD               250
+`define CLK_PERIOD               500
 `endif
 
 // Simulation timeout (500ms)
