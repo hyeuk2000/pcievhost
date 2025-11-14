@@ -43,7 +43,7 @@
 
 // Number of lanes (max is 16---other valid values are 8, 4, 2 and 1)
 `ifndef PCIE_NUM_PHY_LANES
-`define PCIE_NUM_PHY_LANES       16
+`define PCIE_NUM_PHY_LANES       4
 `endif
 
 // VProc node numbers must be different between host and endpoint,
